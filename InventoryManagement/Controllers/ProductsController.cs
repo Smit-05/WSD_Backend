@@ -31,6 +31,22 @@ namespace InventoryManagement.Controllers
             return await _context.Products.ToListAsync();
         }
 
+        [HttpGet("{id}/get_products")]
+        public async Task<ActionResult<IEnumerable<Product>>> GetDealerProducts(long id)
+        {
+            if (_context.Products == null)
+            {
+                return NotFound();
+            }
+            var dealer = await _context.Dealers.Where(d => d.ID ==id).Include(p => p.Products).FirstAsync();
+            if (dealer == null)
+            {
+                return NotFound();
+            }
+            var products = dealer.Products.ToList();
+            return products;
+        }
+
         // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(long id)
@@ -52,7 +68,7 @@ namespace InventoryManagement.Controllers
         // PUT: api/Products/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(long id, Product product)
+        public async Task<IActionResult> PutProduct(long id, [FromBody] Product product)
         {
             if (id != product.Id)
             {

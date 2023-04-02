@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using InventoryManagement.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.FileProviders;
 
 namespace InventoryManagement.Controllers
 {
@@ -21,6 +23,7 @@ namespace InventoryManagement.Controllers
         }
 
         // GET: api/Dealers
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Dealer>>> GetDealers()
         {
@@ -29,6 +32,21 @@ namespace InventoryManagement.Controllers
               return NotFound();
           }
             return await _context.Dealers.Include(d => d.Products).ToListAsync();
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<Dealer>> Login(string email,string password)
+        {
+            if (_context.Dealers == null)
+            {
+                return NotFound();
+            }
+            var dealer = await _context.Dealers.Where(d => d.Email == email && d.Password == password ).FirstOrDefaultAsync();
+            if (dealer == null)
+            {
+                return NotFound();
+            }
+            return Ok(dealer);
         }
 
         // GET: api/Dealers/5
@@ -82,13 +100,18 @@ namespace InventoryManagement.Controllers
 
         // POST: api/Dealers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Dealer>> PostDealer(Dealer dealer)
+        [HttpPost("signup")]
+        public async Task<ActionResult<Dealer>> PostDealer([FromBody]Dealer dealer)
         {
           if (_context.Dealers == null)
           {
               return Problem("Entity set 'Context.Dealers'  is null.");
           }
+          var d = await _context.Dealers.Where(x => x.Email == dealer.Email).FirstOrDefaultAsync();
+            if (d != null)
+            {
+                return BadRequest();
+            }
             _context.Dealers.Add(dealer);
             await _context.SaveChangesAsync();
 
@@ -96,17 +119,18 @@ namespace InventoryManagement.Controllers
         }
 
         [HttpPost("{id}/add_product")]
-        public async Task<ActionResult<Dealer>> AddProduct(long id,Product product)
+        public async Task<ActionResult<long>> AddProduct(long id, Product product)
         {
             if (_context.Dealers == null)
             {
                 return Problem("Entity set 'Context.Dealers'  is null.");
             }
             var dealer = await _context.Dealers.FindAsync(id);
-            dealer.Products.Append(product);
+
+            dealer.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return product.Id;
         }
 
         // DELETE: api/Dealers/5

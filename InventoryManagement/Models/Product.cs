@@ -18,7 +18,6 @@ namespace InventoryManagement.Models
 
         [Required]
         public int Quantity { get; set; }
-
   
 
 
